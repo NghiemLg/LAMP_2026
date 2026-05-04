@@ -1,0 +1,22 @@
+# Thresholds to set a new node
+translation_threshold: 2.0
+
+# Point cloud storing parameters
+keyed_scan_time_diff_limit: 5.0
+# keyed_scan_time_diff_limit: 0.2
+pc_buffer_size_limit: 50
+
+# Timestamp threshold 
+ts_threshold: 0.05
+# ts_threshold: 5.0
+
+# Buffer size limits
+max_buffer_size: 6000
+
+# Debugging message for point cloud buffer handling
+b_debug_pointcloud_buffer: false
+
+subscriptions: 
+  b_register_lidar_sub: true
+  b_register_visual_sub: false
+  b_register_wheel_sub: false

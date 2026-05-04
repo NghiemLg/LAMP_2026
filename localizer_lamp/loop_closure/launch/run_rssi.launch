@@ -1,0 +1,19 @@
+<launch>
+    <arg name="robot_namespace" default="husky4"/>
+    <arg name="base_namespace" default="base1"/>
+    <group ns="$(arg base_namespace)">
+
+        <node pkg="loop_closure"
+            type="rssi_loop_generation_node"
+            name="rssi_loop_generation_node"
+            output="screen">
+            <remap from="~rssi_aggregated_drop_status" to="/$(arg base_namespace)/comm_node_manager/status_agg"/>
+            <remap from="~silvus_raw" to="/$(arg base_namespace)/comm/silvus/raw"/>
+            <remap from="~pose_graph" to="/$(arg base_namespace)/lamp/pose_graph_incremental"/>
+            <remap from="~loop_candidates" to="lamp/loop_generation/rssi_loop_candidates" />
+            <rosparam file="$(find loop_closure)/config/rssi_parameters.yaml" subst_value="true"/>
+        </node>
+
+    </group>
+
+</launch>

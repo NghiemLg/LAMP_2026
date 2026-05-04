@@ -1,0 +1,14 @@
+#
+# Python 3 / PyTorch Geometric dependencies for the loop-closure learning tools.
+# This workspace currently builds against Python 3.8 and Torch 2.4.x with CUDA 12.1.
+#
+-f https://data.pyg.org/whl/torch-2.4.0+cu121.html
+
+torch>=2.4,<2.5
+torchvision
+pyg-lib
+torch-scatter
+torch-sparse
+torch-cluster
+torch-spline-conv
+torch-geometric>=2.4,<2.7

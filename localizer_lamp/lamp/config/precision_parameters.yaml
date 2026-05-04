@@ -1,0 +1,38 @@
+#######################################
+# Placeholder precisions for the pose-graph - to use before having computed covariances
+#######################################
+
+# Noise parameters for odometry
+attitude_sigma: 0.0025
+position_sigma: 0.003
+
+# Noise parameters (as variances) for Laser loop closure
+laser_lc_rot_sigma: 0.01 #0.316 # default 0.01
+laser_lc_trans_sigma: 0.01 #0.6324 # default 0.04
+
+# Noise parameters (as precisions) for artifacts
+# high translational precision required for ground truthing, could be bad for artifact LC
+artifact_rot_precision: 0.00000000000000000001 # must be nonzero
+artifact_trans_precision: 10.0
+
+# Noise parameters (as precisions) for fiducials
+fiducial_rot_precision: 0.0
+fiducial_trans_precision: 0.0
+
+# Noise parameters (as precisions) for point estimation service (survey tool integration)
+point_estimate_precision: 25.0
+
+# Noise parameters (as precisions) for artifact ground truth locations
+artifact_gt_rot_precision: 0.00000000000000000001
+artifact_gt_trans_precision: 25.0
+
+# PC Ground Truth sigmas
+gt_rot_sigma: 0.01
+gt_trans_sigma: 0.01
+gt_prior_covar: 0.0001
+
+# Noise parameters for unit vectors in attitude
+noise_sigma_imu: 0.3
+
+# Noise parameters for stationary imu factor
+stationary_noise_sigma: 0.3

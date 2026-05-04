@@ -1,0 +1,301 @@
+#############################################
+# PARAMETERS FOR LASER LOOP CLOSURES (ROBOT)
+#############################################
+
+robot: 
+
+  #--------------------------------------------------------------------------------
+  #### Loop closure generation 
+  #--------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------
+  # Translation threshold for new nodes to compute values for loop closure checking
+  translation_threshold_nodes: 1.0
+  # Don't attempt loop closures with poses in the graph that were collected within
+  # this translational distance (m) from the current pose.
+  distance_to_skip_recent_poses: 15
+
+  # When searching through old poses for loop closures, only consider old poses
+  # that are within an adaptive radius of the new pose
+  proximity_threshold_min: 5
+  proximity_threshold_max: 80
+  increase_rate: 0.2
+  proximity_threshold: 15 # only for old LCD module
+  distance_before_reclosing: 5
+  max_rotation_deg: 50 # only for old LCD module
+
+  # When generating loop closures, only generate with n closest old poses instead 
+  # of everything within the proximity threshold.
+  n_closest: 3
+  b_take_n_closest: true
+
+  #--------------------------------------------------------------------------------
+  #### Loop closure prioritization
+  #--------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------
+  # Loop closure prioritization method { GENERIC, OBSERVABILITY}
+  prioritization_method: 0
+
+  #--------------------------------------------------------------------------------
+  # Generic prioritization loop closure (by order recieved)
+  #--------------------------------------------------------------------------------
+  gen_prioritization:
+    min_observability: 100
+    choose_best: true # send only the best candidate for geometric verification
+
+  #--------------------------------------------------------------------------------
+  # Observability prioritization loop closure
+  #--------------------------------------------------------------------------------
+  obs_prioritization:
+    publish_n_best: 10
+    min_observability: 0.2
+    horizon: 120
+
+  #--------------------------------------------------------------------------------
+  #### Loop closure computation
+  #--------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------
+  # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, TEASER }
+  icp_initialization_method: 3
+
+  # ICP covariance calculation method { POINT2POINT, POINT2PLANE }
+  icp_covariance_calculation: 1
+
+  # To compute a loop closure we perform ICP between the current scan and laser
+  # scans captured from nearby poses. In order to be considered a loop closure,
+  # the ICP "fitness score" must be less than this number.
+  max_tolerable_fitness: 0.4 #0.04
+
+  # How long to "wait" for keyed scans 
+  keyed_scans_max_delay: 0.1
+
+  #How many ICP alignments to perform simultaneously.
+  #If <1, percent of total cores on machine
+  #if >1 then use exactly n threads.
+  #if == 1, don't use thread pool
+  icp_thread_pool_thread_count: 1
+
+  icp_lc:
+    # Stop ICP if the transformation from the last iteration was this small.
+    tf_epsilon: 0.0000000001
+
+    # During ICP, two points won't be considered a correspondence if they are at
+    # least this far from one another.
+    corr_dist: 0.1
+
+    # Iterate ICP this many times.
+    iterations: 5 # Default from original branch is 20: 
+
+    # Number of threads for multithreaded GICP
+    threads: 4
+  
+  #--------------------------------------------------------------------------------
+  # SAC-IA Settings for feature-based initialization
+  #--------------------------------------------------------------------------------
+
+  sac_ia:
+    # Iterate SAC-IA this many times.
+    iterations: 10
+
+    # Number of previous scans to accumulate for target pointcloud
+    # 0 means no accumulation
+    num_prev_scans: 2
+    num_next_scans: 2
+    b_accumulate_source: true
+    
+    # Radii of area to consider when computing normals and features
+    features_radius: 2.0
+
+    # If SAC fitness score is more than the following value, it will be rejected
+    fitness_score_threshold: 1.2
+
+  #--------------------------------------------------------------------------------
+  # TEASER Settings for feature-based initialization
+  #--------------------------------------------------------------------------------
+  
+  TEASERPP:
+
+    num_inlier_threshold: 5
+    rotation_cost_threshold: 1.0 # Default value in TEASER++: 0.005
+    rotation_max_iterations: 100
+    noise_bound: 0.05
+    # For finding FPFH correspondences
+    TEASER_FPFH_features_radius: 2.0
+
+  #--------------------------------------------------------------------------------
+  # Harris keypoints Settings 
+  #--------------------------------------------------------------------------------
+  
+  harris3D:
+    # Set the threshold value to filter out weak corners. This is only evaluated if non maxima suppression is turned on.
+    harris_threshold: 0.000000005
+
+    # Whether non maxima suppression should be applied or the response for each point should be returned
+    harris_suppression: true
+
+    # the radius for normal estimation as well as for non maxima suppression
+    harris_radius: 0.1
+
+    # Whether the detected key points should be refined or not
+    harris_refine: false
+
+    # Response type: {HARRIS = 1, NOBLE, LOWE, TOMASI, CURVATURE}
+    harris_response: 1
+  queue:
+    #The max number of loop closures to send once the computation node is free
+    amount_per_round: 100
+    # Method : {ROUND_ROBIN = 1, OBSERVABILITY = 2}
+    method: 2
+
+#############################################
+# PARAMETERS FOR LASER LOOP CLOSURES (BASE)
+#############################################
+
+base: 
+  #--------------------------------------------------------------------------------
+  #### Loop closure generation 
+  #--------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------
+  # Translation threshold for new nodes to compute values for loop closure checking
+  translation_threshold_nodes: 2.0
+  # Don't attempt loop closures with poses in the graph that were collected within
+  # this translational distance (m) from the current pose.
+  distance_to_skip_recent_poses: 20
+
+  # When searching through old poses for loop closures, only consider old poses
+  # that are within an adaptive radius of the new pose
+  proximity_threshold_min: 30
+  proximity_threshold_max: 30
+  increase_rate: 10
+  proximity_threshold: 30 # only for old LCD module
+  distance_before_reclosing: 5
+  max_rotation_deg: 50 # only for old LCD module
+
+  # When generating loop closures, only generate with n closest old poses instead 
+  # of everything within the proximity threshold.
+  n_closest: 10
+  b_take_n_closest: false
+
+  #--------------------------------------------------------------------------------
+  #### Loop closure prioritization
+  #--------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------
+  # Loop closure prioritization method { GENERIC, OBSERVABILITY}
+  prioritization_method: 1
+
+  #--------------------------------------------------------------------------------
+  # Generic prioritization loop closure (by order recieved)
+  #--------------------------------------------------------------------------------
+  gen_prioritization:
+    min_observability: 100
+    choose_best: false # send only the best candidate for geometric verification
+
+  #--------------------------------------------------------------------------------
+  # Observability prioritization loop closure
+  #--------------------------------------------------------------------------------
+  obs_prioritization:
+    publish_n_best: 300
+    min_observability: 0.2 # normalized from 0 to 1
+    horizon: 300
+
+  #--------------------------------------------------------------------------------
+  #### Loop closure computation
+  #--------------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------
+  # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, TEASER }
+  icp_initialization_method: 3
+
+  # ICP covariance calculation method { POINT2POINT, POINT2PLANE }
+  icp_covariance_calculation: 1
+
+  # To compute a loop closure we perform ICP between the current scan and laser
+  # scans captured from nearby poses. In order to be considered a loop closure,
+  # the ICP "fitness score" must be less than this number.
+  max_tolerable_fitness: 0.9 # Adjust to match filter
+
+  # How long to "wait" for keyed scans 
+  keyed_scans_max_delay: 600.0
+
+  #How many ICP alignments to perform simultaneously.
+  #If <1, percent of total cores on machine
+  #if >1 then use exactly n threads.
+  #if == 1, don't use thread pool
+  icp_thread_pool_thread_count: 0.8
+
+  icp_lc:
+    # Stop ICP if the transformation from the last iteration was this small.
+    tf_epsilon: 0.0000000001
+
+    # During ICP, two points won't be considered a correspondence if they are at
+    # least this far from one another.
+    corr_dist: 0.5
+
+    # Iterate ICP this many times.
+    # Check this
+    iterations: 200 #was 5 # Default from original branch is 20: 
+                  # For ground truth generation set it to a high number (100)
+    
+    # Number of threads for multithreaded GICP
+    threads: 8
+
+    # Transform thresholding - to limit for transforms too large
+    transform_thresholding: true 
+    max_translation: 20 # max allowable translation in m 
+    max_rotation: 50 # max allowable rotation in deg
+
+  #--------------------------------------------------------------------------------
+  # SAC-IA Settings for feature-based initialization
+  #--------------------------------------------------------------------------------
+
+  sac_ia:
+    # Iterate SAC-IA this many times.
+    iterations: 500
+
+    # Number of previous scans to accumulate for target pointcloud
+    # 0 means no accumulation
+    num_prev_scans: 2
+    num_next_scans: 2
+    b_accumulate_source: false
+    
+    # Radii of area to consider when computing normals and features
+    features_radius: 2.0
+
+    # If SAC fitness score is more than the following value, it will be rejected
+    fitness_score_threshold: 32.0
+
+  #--------------------------------------------------------------------------------
+  # TEASER Settings for feature-based initialization
+  #--------------------------------------------------------------------------------
+  
+  TEASERPP:
+
+    num_inlier_threshold: 3
+    rotation_cost_threshold: 0.00001 # Default value in TEASER++: 0.005
+    rotation_max_iterations: 500
+    noise_bound: 2.0
+    # For finding FPFH correspondences
+    TEASER_FPFH_features_radius: 2.0
+
+  #--------------------------------------------------------------------------------
+  # Harris keypoints Settings 
+  #--------------------------------------------------------------------------------
+  
+  harris3D:
+    # Set the threshold value to filter out weak corners. This is only evaluated if non maxima suppression is turned on.
+    harris_threshold: 0.000000005
+
+    # Whether non maxima suppression should be applied or the response for each point should be returned
+    harris_suppression: true
+
+    # the radius for normal estimation as well as for non maxima suppression
+    harris_radius: 0.1
+
+    # Whether the detected key points should be refined or not
+    harris_refine: false
+
+    # Response type: {HARRIS = 1, NOBLE, LOWE, TOMASI, CURVATURE}
+    harris_response: 1
+  queue:
+    #The max number of loop closures to send once the computation node is free
+    amount_per_round: 500
+    # Method : {ROUND_ROBIN = 1, OBSERVABILITY = 2}
+    method: 1

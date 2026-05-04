@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>pose_graph_visualizer</name>
+  <version>0.0.1</version>
+  <description>The pose_graph_visualizer package</description>
+
+  <author email="heiden@usc.edu">Team COSTAR</author>
+  <maintainer email="benjamin.morrell@jpl.nasa.gov">Benjamin Morrell</maintainer>
+
+  <license>GPLv2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>message_generation</depend>
+  <depend>geometry_utils</depend>
+  <depend>parameter_utils</depend>
+  <depend>pose_graph_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>pcl_ros</depend>
+  <depend>tf_conversions</depend>
+  <depend>interactive_markers</depend>
+  <depend>lamp_utils</depend>
+  <depend>message_runtime</depend>
+  <depend>artifact_msgs</depend>
+
+</package>

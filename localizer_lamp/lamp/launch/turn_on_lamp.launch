@@ -1,0 +1,137 @@
+<launch>
+  <arg name="robot_namespace" default="husky"/>
+  <arg name="base_namespace" default="base1"/>
+
+  <arg name="b_use_hero" default="false"/>
+
+  <!-- List of robots with hovermap mounted -->
+  <arg name="hovermap_robots" value="spot3 spot4 husky1 husky2 husky3" />
+  <arg name="b_use_hovermap" value="$(eval robot_namespace in hovermap_robots)" />
+
+  <!-- Select odometry source -->
+  <arg if="$(eval b_use_hero)" name="odom_input" value="hero/odometry"/>
+  <arg if="$(eval not b_use_hero and b_use_hovermap)" name="odom_input" value="hvm/odometry"/>
+  <arg if="$(eval not b_use_hero and not b_use_hovermap)" name="odom_input" value="lo_frontend/odometry"/>
+
+  <!-- optional filename of the zip archive of a pose graph to be loaded -->
+  <arg name="load_pose_graph_file" default="" />
+
+  <group ns="$(arg robot_namespace)">
+
+
+    <!-- SLAM -->
+    <node pkg="lamp"
+          name="lamp"
+          type="lamp_node"
+          output="screen">
+          <!-- launch-prefix="xterm -e gdb - -args"> -->
+
+      <!-- Load graph -->
+      <param name="load_graph" value="$(arg load_pose_graph_file)"/>
+
+      <!-- Use fixed covariances, rather than computed -->
+      <param if="$(eval b_use_hovermap)" name="b_use_fixed_covariances" value="true" />
+      <param unless="$(eval b_use_hovermap)" name="b_use_fixed_covariances" value="false" />
+
+      <!-- Topics -->
+      <remap from="~pcld" to="body_filter/output" unless="$(arg b_use_hovermap)"/>
+      <remap from="~pcld" to="hvm/body_filter/output" if="$(arg b_use_hovermap)"/>
+      <!-- <remap from="~pcld" to="velodyne_points/transformed"/> -->
+      <!-- <remap from="~pcld" to="lo_frontend/local_scan_map" /> -->
+      <!-- Note that the transformed points come from the transforming node launched with lo_frontend -->
+      <!-- <remap from="~lio_odom" to="lo_frontend/odometry"/> -->
+      <!-- <remap from="~lio_odom" to="hero/lion/odom"/> -->
+      <remap from="~lio_odom" to="$(arg odom_input)"/>
+      <!-- <remap from="~lio_odom" to="$(arg odom_input_husky)" unless="$(eval robot_namespace.startswith('spot'))"/> -->
+      <!-- <remap from="~lio_odom" to="spot_frontend/odometry" if="$(eval robot_namespace.startswith('spot'))"/> -->
+      <remap from="~vio_odom" to="visual_inertial_odometry_topic_currently_not_used"/>
+      <remap from="~wio_odom" to="wheel_inertial_odometry_topic_currently_not_used"/>
+      <remap from="~optimized_values" to="lamp_pgo/optimized_values"/>
+
+      <remap from="~artifact" to="~artifact_global" />
+      <remap from="~artifact_relative" to="artifact/update" />
+
+      <remap from="~imu_topic" to="vn100/imu_wori_wcov"/>
+      <remap from="~stationary_topic" to="stationary_accel"/>
+
+      <!-- LAMP settings -->
+      <rosparam file="$(find lamp)/config/lamp_settings.yaml" subst_value="true"/>
+      <rosparam file="$(find lamp)/config/lamp_init_noise.yaml" subst_value="true"/>
+      <rosparam file="$(find lamp)/config/precision_parameters.yaml" subst_value="true"/>
+
+      <!-- Factor handlers settings -->
+      <rosparam file="$(find factor_handlers)/config/odom_parameters.yaml" subst_value="true"/>
+      <rosparam file="$(find factor_handlers)/config/imu_parameters.yaml" subst_value="true"/>
+      <rosparam file="$(find factor_handlers)/config/april_parameters.yaml" subst_value="true"/>
+
+      <!-- Rates -->
+      <rosparam file="$(find lamp)/config/lamp_rates.yaml"/>
+
+      <!-- Frames -->
+      <rosparam file="$(find lamp)/config/lamp_frames.yaml" subst_value="true"/>
+
+      <!-- Point cloud filter -->
+      <rosparam file="$(find lamp)/config/filter_parameters.yaml"/>
+
+      <!-- Point cloud mapper -->
+      <rosparam file="$(find point_cloud_mapper)/config/parameters.yaml"/>
+
+      <!-- The robot prefix dependent of robot_namespace -->
+      <param name="robot_prefix" value="a" if="$(eval robot_namespace == 'husky1')" />
+      <param name="robot_prefix" value="b" if="$(eval robot_namespace == 'husky2')"/>
+      <param name="robot_prefix" value="c" if="$(eval robot_namespace == 'husky3')"/>
+      <param name="robot_prefix" value="d" if="$(eval robot_namespace == 'husky4')"/>
+      <param name="robot_prefix" value="e" if="$(eval robot_namespace == 'spot1')"/>
+      <param name="robot_prefix" value="f" if="$(eval robot_namespace == 'spot2')"/>
+      <param name="robot_prefix" value="g" if="$(eval robot_namespace == 'spot3')"/>
+      <param name="robot_prefix" value="h" if="$(eval robot_namespace == 'spot4')"/>
+      <param name="robot_prefix" value="i" if="$(eval robot_namespace == 'aquila1')"/>
+      <param name="robot_prefix" value="j" if="$(eval robot_namespace == 'aquila2')"/>
+      <param name="robot_prefix" value="k" if="$(eval robot_namespace == 'kaist1')"/>
+      <param name="robot_prefix" value="l" if="$(eval robot_namespace == 'zoe1')"/>
+      <param name="robot_prefix" value="m" if="$(eval robot_namespace == 'zoe1')"/>
+      <param name="robot_prefix" value="x" if="$(eval robot_namespace == 'xmaxx1')"/>
+
+      <!-- The artifact prefix dependent of robot_namespace -->
+      <param name="artifact_prefix" value="A" if="$(eval robot_namespace == 'husky1')" />
+      <param name="artifact_prefix" value="B" if="$(eval robot_namespace == 'husky2')"/>
+      <param name="artifact_prefix" value="C" if="$(eval robot_namespace == 'husky3')"/>
+      <param name="artifact_prefix" value="D" if="$(eval robot_namespace == 'husky4')"/>
+      <param name="artifact_prefix" value="E" if="$(eval robot_namespace == 'spot1')"/>
+      <param name="artifact_prefix" value="F" if="$(eval robot_namespace == 'spot2')"/>
+      <param name="artifact_prefix" value="G" if="$(eval robot_namespace == 'spot3')"/>
+      <param name="artifact_prefix" value="H" if="$(eval robot_namespace == 'spot4')"/>
+      <param name="artifact_prefix" value="J" if="$(eval robot_namespace == 'aquila2')"/>
+      <param name="artifact_prefix" value="K" if="$(eval robot_namespace == 'kaist1')"/>
+      <param name="artifact_prefix" value="L" if="$(eval robot_namespace == 'zoe1')"/>
+      <param name="artifact_prefix" value="M" if="$(eval robot_namespace == 'zoe1')"/>
+      <param name="artifact_prefix" value="X" if="$(eval robot_namespace == 'xmaxx1')"/>
+    </node>
+
+
+    <!-- Pose graph optimizer -->
+    <!-- <node pkg="lamp_pgo"
+          name="lamp_pgo"
+          type="lamp_pgo_node"
+          output="screen">
+      <remap from="~pose_graph_to_optimize" to="lamp/pose_graph_to_optimize" />
+      <rosparam file="$(find lamp_pgo)/config/pgo_parameters.yaml" subst_value="true"/>
+    </node> -->
+
+    <!-- Loop Closure  -->
+    <!-- <include file="$(find loop_closure)/launch/loop_closure_modules.launch"/> -->
+
+  </group>
+
+  <!-- Base Station graph merger  -->
+  <include file="$(find pose_graph_merger)/launch/two_pose_graph_merge.launch">
+    <arg name="robot_namespace" value="$(arg robot_namespace)"/>
+    <arg name="base_namespace" value="$(arg base_namespace)"/>
+  </include>
+
+  <!-- Zero Velocity Detector  -->
+  <include file="$(find localizer_zero_velocity_detector)/launch/very_stable_genius.launch">
+    <arg name="robot_namespace" value="$(arg robot_namespace)"/>
+  </include>
+
+</launch>

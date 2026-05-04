@@ -1,0 +1,12 @@
+# TODO: Put $(arg robot_namespace) back in yaml
+imu:
+  base_frame_id: $(arg robot_namespace)/base_link
+  imu_frame_id: $(arg robot_namespace)/vn100
+  buffer_size_limit: 1000
+  ts_threshold: 0.1
+  b_convert_imu_frame: false
+  b_verbosity: false
+
+
+# For the stationary handlers
+stationary_key_step_threshold: 3
