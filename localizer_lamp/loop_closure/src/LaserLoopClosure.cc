@@ -486,6 +486,13 @@ bool LaserLoopClosure::PerformAlignment(const gtsam::Symbol key1,
     }
   } break;
 
+  case IcpInitMethod::KISS_MATCHER: {
+    ROS_WARN_STREAM_ONCE(
+        "KISS-Matcher initialization is implemented in IcpLoopComputation, "
+        "not the legacy LaserLoopClosure path. Falling back to identity.");
+    initial_guess = Eigen::Matrix4f::Identity(4, 4);
+  } break;
+
   default: // identity as default (default in ICP anyways)
   {
     initial_guess = Eigen::Matrix4f::Identity(4, 4);

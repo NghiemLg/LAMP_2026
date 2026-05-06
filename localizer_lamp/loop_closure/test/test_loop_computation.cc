@@ -59,10 +59,10 @@ class TestLoopComputation : public ::testing::Test {
         source, target, tf_out, sac_fitness_score);
   }
 
-  void getTeaserInitialAlignment(PointCloud::ConstPtr source,
-                                 PointCloud::ConstPtr target,
-                                 Eigen::Matrix4f* tf_out) {
-    icp_compute_.GetTeaserInitialAlignment(source, target, tf_out);
+  bool getKissMatcherInitialAlignment(PointCloud::ConstPtr source,
+                                      PointCloud::ConstPtr target,
+                                      Eigen::Matrix4f* tf_out) {
+    return icp_compute_.GetKissMatcherInitialAlignment(source, target, tf_out);
   }
 
   IcpLoopComputation icp_compute_;
@@ -98,8 +98,9 @@ TEST_F(TestLoopComputation, TestSacInitialAlign) {
   EXPECT_EQ(0, fitness_score);
 }
 
-// TODO: Fix teaser unittests
-// TEST_F(TestLoopComputation, TestTeaserInitialAlign) {
+// TODO: Add a deterministic KISS-Matcher unit test with enough 3D structure for
+// descriptor matching.
+// TEST_F(TestLoopComputation, TestKissMatcherInitialAlign) {
 //   ros::NodeHandle nh;
 //   icp_compute_.Initialize(nh);
 
@@ -115,11 +116,9 @@ TEST_F(TestLoopComputation, TestSacInitialAlign) {
 //   pcl::transformPointCloudWithNormals(*corner, *corner_moved, T, true);
 
 //   Eigen::Matrix4f T_est;
-//   int inliers;
-//   getTeaserInitialAlignment(corner, corner_moved, &T_est, inliers);
+//   ASSERT_TRUE(getKissMatcherInitialAlignment(corner, corner_moved, &T_est));
 
 //   EXPECT_TRUE(T.isApprox(T_est));
-//   EXPECT_EQ(300, inliers);
 // }
 
 TEST_F(TestLoopComputation, PerformAlignment) {

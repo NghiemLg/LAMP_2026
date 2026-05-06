@@ -54,7 +54,8 @@ robot:
   #### Loop closure computation
   #--------------------------------------------------------------------------------
   #--------------------------------------------------------------------------------
-  # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, TEASER }
+  # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, KISS_MATCHER, CANDIDATE }
+  # Set this to 4 to use KISS-Matcher; 3 keeps the previous SAC-IA feature initializer.
   icp_initialization_method: 3
 
   # ICP covariance calculation method { POINT2POINT, POINT2PLANE }
@@ -109,17 +110,18 @@ robot:
     fitness_score_threshold: 1.2
 
   #--------------------------------------------------------------------------------
-  # TEASER Settings for feature-based initialization
+  # KISS-Matcher settings for global-registration initialization.
   #--------------------------------------------------------------------------------
   
-  TEASERPP:
-
-    num_inlier_threshold: 5
-    rotation_cost_threshold: 1.0 # Default value in TEASER++: 0.005
-    rotation_max_iterations: 100
-    noise_bound: 0.05
-    # For finding FPFH correspondences
-    TEASER_FPFH_features_radius: 2.0
+  KISS_MATCHER:
+    voxel_size: 0.3
+    use_voxel_sampling: true
+    use_quatro: false
+    use_ratio_test: false
+    num_max_corr: 5000
+    min_final_inliers: 5
+    robin_noise_bound_gain: 1.0
+    solver_noise_bound_gain: 0.75
 
   #--------------------------------------------------------------------------------
   # Harris keypoints Settings 
@@ -201,7 +203,8 @@ base:
   #### Loop closure computation
   #--------------------------------------------------------------------------------
   #--------------------------------------------------------------------------------
-  # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, TEASER }
+  # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, KISS_MATCHER, CANDIDATE }
+  # Set this to 4 to use KISS-Matcher; 3 keeps the previous SAC-IA feature initializer.
   icp_initialization_method: 3
 
   # ICP covariance calculation method { POINT2POINT, POINT2PLANE }
@@ -263,17 +266,18 @@ base:
     fitness_score_threshold: 32.0
 
   #--------------------------------------------------------------------------------
-  # TEASER Settings for feature-based initialization
+  # KISS-Matcher settings for global-registration initialization.
   #--------------------------------------------------------------------------------
   
-  TEASERPP:
-
-    num_inlier_threshold: 3
-    rotation_cost_threshold: 0.00001 # Default value in TEASER++: 0.005
-    rotation_max_iterations: 500
-    noise_bound: 2.0
-    # For finding FPFH correspondences
-    TEASER_FPFH_features_radius: 2.0
+  KISS_MATCHER:
+    voxel_size: 0.5
+    use_voxel_sampling: true
+    use_quatro: false
+    use_ratio_test: false
+    num_max_corr: 5000
+    min_final_inliers: 5
+    robin_noise_bound_gain: 1.0
+    solver_noise_bound_gain: 0.75
 
   #--------------------------------------------------------------------------------
   # Harris keypoints Settings 

@@ -4,13 +4,13 @@
  * @author Yun Chang
  */
 #include <Eigen/LU>
+#include <algorithm>
 #include <cmath>
+#include <vector>
 #include <geometry_utils/GeometryUtilsROS.h>
+#include <kiss_matcher/KISSMatcher.hpp>
 #include <parameter_utils/ParameterUtils.h>
 #include <pcl/registration/ia_ransac.h>
-#include <teaser/matcher.h>
-#include <teaser/evaluation.h>
-#include <teaser/registration.h>
 #include <lamp_utils/CommonFunctions.h>
 
 #include "lamp_utils/PointCloudUtils.h"
@@ -21,6 +21,23 @@ namespace pu = parameter_utils;
 namespace gu = geometry_utils;
 
 namespace lamp_loop_closure {
+namespace {
+
+std::vector<Eigen::Vector3f> ToKissMatcherCloud(
+    const PointCloud::ConstPtr& cloud) {
+  std::vector<Eigen::Vector3f> points;
+  points.reserve(cloud->size());
+  for (const auto& point : cloud->points) {
+    if (!std::isfinite(point.x) || !std::isfinite(point.y) ||
+        !std::isfinite(point.z)) {
+      continue;
+    }
+    points.emplace_back(point.x, point.y, point.z);
+  }
+  return points;
+}
+
+}  // namespace
 
 IcpLoopComputation::IcpLoopComputation()
   : icp_computation_pool_(0), b_accumulate_source_(false) {}
@@ -101,20 +118,30 @@ bool IcpLoopComputation::LoadParameters(const ros::NodeHandle& n) {
                sac_fitness_score_threshold_))
     return false;
 
-  // Load TEASER parameters
-  if (!pu::Get(param_ns_ + "/TEASERPP/num_inlier_threshold",
-               teaser_inlier_threshold_))
+  // Load KISS-Matcher parameters
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/voxel_size",
+               kiss_matcher_voxel_size_))
     return false;
-  if (!pu::Get(param_ns_ + "/TEASERPP/rotation_cost_threshold",
-               rotation_cost_threshold_))
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/use_voxel_sampling",
+               kiss_matcher_use_voxel_sampling_))
     return false;
-  if (!pu::Get(param_ns_ + "/TEASERPP/rotation_max_iterations",
-               rotation_max_iterations_))
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/use_quatro",
+               kiss_matcher_use_quatro_))
     return false;
-  if (!pu::Get(param_ns_ + "/TEASERPP/noise_bound", noise_bound_))
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/use_ratio_test",
+               kiss_matcher_use_ratio_test_))
     return false;
-  if (!pu::Get(param_ns_ + "/TEASERPP/TEASER_FPFH_features_radius",
-               TEASER_FPFH_features_radius_))
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/num_max_corr",
+               kiss_matcher_num_max_corr_))
+    return false;
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/min_final_inliers",
+               kiss_matcher_min_final_inliers_))
+    return false;
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/robin_noise_bound_gain",
+               kiss_matcher_robin_noise_bound_gain_))
+    return false;
+  if (!pu::Get(param_ns_ + "/KISS_MATCHER/solver_noise_bound_gain",
+               kiss_matcher_solver_noise_bound_gain_))
     return false;
 
   // Load Harris parameters
@@ -525,9 +552,11 @@ bool IcpLoopComputation::PerformAlignment(const gtsam::Symbol& key1,
       return false;
     }
   } break;
-  case IcpInitMethod::TEASERPP: {
-    GetTeaserInitialAlignment(
-        accumulated_source, accumulated_target, &initial_guess);
+  case IcpInitMethod::KISS_MATCHER: {
+    if (!GetKissMatcherInitialAlignment(
+            accumulated_source, accumulated_target, &initial_guess)) {
+      return false;
+    }
   } break;
   case IcpInitMethod::CANDIDATE: {
     gtsam::Pose3 candidate_pose21 = pose2.between(pose1);
@@ -946,138 +975,55 @@ void IcpLoopComputation::AccumulateScans(const gtsam::Key& key,
   }
 }
 
-void IcpLoopComputation::GetTeaserInitialAlignment(PointCloudConstPtr source,
-                                                   PointCloudConstPtr target,
-                                                   Eigen::Matrix4f* tf_out) {
-  // Get Normals
-  Normals::Ptr source_normals(new Normals);
-  Normals::Ptr target_normals(new Normals);
-  lamp_utils::ExtractNormals(source, source_normals);
-  lamp_utils::ExtractNormals(target, target_normals);
-
-  // Get Harris keypoints for source and target
-  PointCloud::Ptr source_keypoints(new PointCloud);
-  PointCloud::Ptr target_keypoints(new PointCloud);
-
-  lamp_utils::ComputeKeypoints(
-      source, source_normals, harris_params_, icp_threads_, source_keypoints);
-  lamp_utils::ComputeKeypoints(
-      target, target_normals, harris_params_, icp_threads_, target_keypoints);
-
-  Features::Ptr source_features(new Features);
-  Features::Ptr target_features(new Features);
-  lamp_utils::ComputeFeatures(source_keypoints,
-                         source,
-                         source_normals,
-                         sac_features_radius_,
-                         icp_threads_,
-                         source_features);
-  lamp_utils::ComputeFeatures(target_keypoints,
-                         target,
-                         target_normals,
-                         sac_features_radius_,
-                         icp_threads_,
-                         target_features);
-
-  // std::cout << "loop - src cloud size: " << source_keypoints->size() <<
-  // std::endl; std::cout << "loop - target cloud size: " <<
-  // target_keypoints->size() << std::endl; std::cout << "loop - src features
-  // size: " << source_features->size() << std::endl; std::cout << "loop -
-  // target features size: " << target_features->size() << std::endl; std::cout
-  // << "Number of inlier threshold is: " << teaser_inlier_threshold_ <<
-  // std::endl;
-
-  if (source_keypoints->size() == 0 || target_keypoints->size() == 0) {
-    return;
+bool IcpLoopComputation::GetKissMatcherInitialAlignment(
+    PointCloudConstPtr source,
+    PointCloudConstPtr target,
+    Eigen::Matrix4f* tf_out) {
+  const auto source_points = ToKissMatcherCloud(source);
+  const auto target_points = ToKissMatcherCloud(target);
+  if (source_points.size() < 2 || target_points.size() < 2) {
+    ROS_INFO_STREAM("KISS-Matcher input too small: source "
+                    << source_points.size() << ", target "
+                    << target_points.size());
+    return false;
   }
 
-  // Align
-  ROS_DEBUG("Finding TEASER Correspondences!");
-  teaser::Matcher matcher;
-  auto correspondences = matcher.calculateKCorrespondences(
-      source_keypoints, target_keypoints, source_features, target_features, 5);
-  int corres_size = correspondences.size();
+  kiss_matcher::KISSMatcherConfig config(
+      kiss_matcher_voxel_size_,
+      kiss_matcher_use_voxel_sampling_,
+      kiss_matcher_use_quatro_,
+      1.0,
+      kiss_matcher_num_max_corr_,
+      3.0,
+      5.0,
+      kiss_matcher_robin_noise_bound_gain_,
+      kiss_matcher_solver_noise_bound_gain_);
+  config.use_ratio_test_ = kiss_matcher_use_ratio_test_;
 
-  // ROS_DEBUG("Found %d correspondences.", corres_size);
-  if (corres_size > 10) {
-    // Retrive the corresponding points from src and tgt point clouds into two
-    // 3-by-N Eigen matrices
-    Eigen::Matrix<double, 3, Eigen::Dynamic> src_corres_points(3, corres_size);
-    Eigen::Matrix<double, 3, Eigen::Dynamic> tgt_corres_points(3, corres_size);
-    for (size_t i = 0; i < corres_size; ++i) {
-      src_corres_points.col(i)
-          << (*source_keypoints)[correspondences[i].first].x,
-          (*source_keypoints)[correspondences[i].first].y,
-          (*source_keypoints)[correspondences[i].first].z;
-      tgt_corres_points.col(i)
-          << (*target_keypoints)[correspondences[i].second].x,
-          (*target_keypoints)[correspondences[i].second].y,
-          (*target_keypoints)[correspondences[i].second].z;
-    }
+  kiss_matcher::KISSMatcher matcher(config);
+  const auto solution = matcher.estimate(source_points, target_points);
+  const auto num_final_inliers = matcher.getNumFinalInliers();
 
-    ROS_DEBUG("Completed TEASER Correspondences!");
-    // Run TEASER++ registration
-    // Prepare solver parameters
-    teaser::RobustRegistrationSolver::Params params;
-    params.noise_bound = 0.5;
-    params.cbar2 = 1;
-    params.estimate_scaling = false;
-    params.rotation_max_iterations = 100;
-    params.rotation_gnc_factor = 1.4;
-    ROS_INFO("Finding TEASER Rigid Transform...");
-    params.rotation_estimation_algorithm = teaser::RobustRegistrationSolver::
-        ROTATION_ESTIMATION_ALGORITHM::GNC_TLS;
-    params.rotation_cost_threshold = 1e-6;
-    params.inlier_selection_mode =
-        teaser::RobustRegistrationSolver::INLIER_SELECTION_MODE::PMC_HEU;
-    // Solve with TEASER++
-    teaser::RobustRegistrationSolver solver(params);
-    solver.solve(src_corres_points, tgt_corres_points);
-    ROS_INFO("");
-    auto solution = solver.getSolution();
-    Eigen::Matrix4d T;
-    T.topLeftCorner(3, 3) = solution.rotation;
-    T.topRightCorner(3, 1) = solution.translation;
-    T(3, 3) = 1.0;
-
-    Eigen::Matrix<double, 3, 3> odom_rotation;
-    odom_rotation = tf_out->block(0, 0, 3, 3).cast<double>();
-    Eigen::Matrix<double, 3, 1> odom_translation;
-    odom_translation = tf_out->block(0, 3, 3, 1).cast<double>();
-    double corr_dist_threshold = 100;
-    teaser::SolutionEvaluator evaluator(
-        src_corres_points, tgt_corres_points, corr_dist_threshold);
-
-    auto error_teaser =
-        evaluator.computeErrorMetric(solution.rotation, solution.translation);
-    auto error_odom =
-        evaluator.computeErrorMetric(odom_rotation, odom_translation);
-    // std::cout << "Odom Rotation: " << odom_rotation << std::endl;
-    // std::cout << "Odom Translation: " << odom_translation << std::endl;
-    // std::cout << "error_teaser: " << error_teaser << std::endl;
-    // std::cout << "error_odom: " << error_odom << std::endl;
-    // std::cout << "Estimated T is: " << T << std::endl;
-    // *tf_out = T.cast<float>();
-    // auto final_inliers = solver.getInlierMaxClique();
-    // n_inliers = static_cast<int>(final_inliers.size());
-    // ROS_INFO("Solved TEASER Rigid Transform with %d inliers", n_inliers);
-
-    if (error_teaser <= error_odom) {
-      // std::cout << "Estimated T is: " << T << std::endl;
-      *tf_out = T.cast<float>();
-      teaser_count_++;
-      // auto final_inliers = solver.getInlierMaxClique();
-      // n_inliers = static_cast<int>(final_inliers.size());
-      // ROS_INFO("Solved TEASER Rigid Transform with %d inliers", n_inliers);
-    } else {
-      odom_count_++;
-    }
-    // std::cout << "teaser_count: " << teaser_count_ << std::endl;
-    // std::cout << "odom_count: " << odom_count_ << std::endl;
-
-  } else {
-    ROS_INFO("Number of corresponding points too low %d: ", corres_size);
+  if (!solution.valid ||
+      num_final_inliers <
+          static_cast<size_t>(std::max(0, kiss_matcher_min_final_inliers_))) {
+    ROS_INFO_STREAM("KISS-Matcher rejected initialization. valid="
+                    << solution.valid << ", final_inliers="
+                    << num_final_inliers << ", required="
+                    << kiss_matcher_min_final_inliers_);
+    odom_count_++;
+    return false;
   }
+
+  Eigen::Matrix4f T = Eigen::Matrix4f::Identity();
+  T.block<3, 3>(0, 0) = solution.rotation.cast<float>();
+  T.block<3, 1>(0, 3) = solution.translation.cast<float>();
+  *tf_out = T;
+  kiss_matcher_count_++;
+
+  ROS_DEBUG_STREAM("KISS-Matcher accepted initialization with "
+                   << num_final_inliers << " final inliers.");
+  return true;
 }
 
 } // namespace lamp_loop_closure

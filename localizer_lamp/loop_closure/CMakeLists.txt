@@ -7,7 +7,8 @@ project(loop_closure)
 
 SET(CMAKE_BUILD_TYPE Release)
 
-set (CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(GTSAM REQUIRED)
 if (NOT GTSAM_FOUND)
@@ -25,7 +26,6 @@ FIND_PACKAGE(Boost REQUIRED
   chrono
 )
 
-find_package(teaserpp REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   lamp_utils
@@ -68,15 +68,41 @@ catkin_package(
 
 find_package(Eigen3 REQUIRED)
 
+set(KISS_MATCHER_SOURCE_DIR
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../KISS-Matcher/cpp/kiss_matcher"
+)
+if (NOT EXISTS "${KISS_MATCHER_SOURCE_DIR}/CMakeLists.txt")
+  message(FATAL_ERROR
+    "KISS-Matcher core was not found at ${KISS_MATCHER_SOURCE_DIR}. "
+    "Clone it to /home/nlg/catkin1_ws/src/KISS-Matcher."
+  )
+endif()
+set(USE_SYSTEM_TBB ON CACHE BOOL
+  "Use Ubuntu 20 system TBB instead of KISS-Matcher's fetched oneTBB."
+  FORCE
+)
+add_subdirectory(
+  "${KISS_MATCHER_SOURCE_DIR}"
+  "${CMAKE_CURRENT_BINARY_DIR}/kiss_matcher"
+)
+if (TARGET robin)
+  set(ROBIN_STD_VECTOR_COMPAT_HEADER
+    "${CMAKE_CURRENT_BINARY_DIR}/robin_std_vector_compat.hpp"
+  )
+  file(WRITE "${ROBIN_STD_VECTOR_COMPAT_HEADER}"
+    "#pragma once\n#include <vector>\nusing std::vector;\n"
+  )
+  target_compile_options(robin PRIVATE
+    -include "${ROBIN_STD_VECTOR_COMPAT_HEADER}"
+  )
+endif()
+
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-std=c++14" COMPILER_SUPPORTS_CXX14)
-check_cxx_compiler_flag("-std=c++1y" COMPILER_SUPPORTS_CXX1Y)
-if (COMPILER_SUPPORTS_CXX14)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-elseif(COMPILER_SUPPORTS_CXX1Y)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
+check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CXX17)
+if (COMPILER_SUPPORTS_CXX17)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 else()
-  message(FATAL_ERROR "${CMAKE_CXX_COMPILER} doesn't provide c++14 support.")
+  message(FATAL_ERROR "${CMAKE_CXX_COMPILER} doesn't provide c++17 support.")
 endif()
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${GTSAM_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
@@ -106,9 +132,7 @@ target_link_libraries(${PROJECT_NAME}
   ${Boost_LIBRARIES}
   gtsam
   Eigen3::Eigen
-  teaserpp::teaser_registration
-  teaserpp::teaser_features
-  teaserpp::teaser_io
+  kiss_matcher::kiss_matcher_core
 )
 
 add_executable(loop_generation_node src/loop_generation_node.cc)

@@ -22,7 +22,6 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>silvus_msgs</build_depend>
-  <build_depend>teaserpp</build_depend>
 
 
   <run_depend>roscpp</run_depend>
@@ -36,7 +35,6 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>silvus_msgs</run_depend>
-  <run_depend>teaserpp</run_depend>
 
 
   <test_depend>rostest</test_depend>

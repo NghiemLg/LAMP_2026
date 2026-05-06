@@ -131,10 +131,6 @@ private:
   double sac_features_radius_;
   double sac_fitness_score_threshold_;
 
-  double rotation_cost_threshold_;
-  double rotation_max_iterations_;
-  double noise_bound_;
-
   lamp_utils::HarrisParams harris_params_;
 
   double laser_lc_rot_sigma_;
@@ -150,7 +146,7 @@ private:
     ODOMETRY,
     ODOM_ROTATION,
     FEATURES,
-    TEASERPP
+    KISS_MATCHER
   };
 
   enum class IcpCovarianceMethod { POINT2POINT, POINT2PLANE };

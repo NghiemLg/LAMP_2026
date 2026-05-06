@@ -65,9 +65,9 @@ public:
                               Eigen::Matrix4f* tf_out,
                               double& sac_fitness_score);
 
-  void GetTeaserInitialAlignment(PointCloud::ConstPtr source,
-                                 PointCloud::ConstPtr target,
-                                 Eigen::Matrix4f* tf_out);
+  bool GetKissMatcherInitialAlignment(PointCloud::ConstPtr source,
+                                      PointCloud::ConstPtr target,
+                                      Eigen::Matrix4f* tf_out);
 
   bool
   ComputeICPCovariancePointPlane(const PointCloud::ConstPtr& query_cloud,
@@ -113,15 +113,18 @@ protected:
   double sac_features_radius_;
   double sac_fitness_score_threshold_;
 
-  // Teaser++ alignment parameters
-  double teaser_inlier_threshold_;
-  double rotation_cost_threshold_;
-  double rotation_max_iterations_;
-  double noise_bound_;
-  double TEASER_FPFH_features_radius_;
+  // KISS-Matcher alignment parameters
+  double kiss_matcher_voxel_size_;
+  bool kiss_matcher_use_voxel_sampling_;
+  bool kiss_matcher_use_quatro_;
+  bool kiss_matcher_use_ratio_test_;
+  int kiss_matcher_num_max_corr_;
+  int kiss_matcher_min_final_inliers_;
+  double kiss_matcher_robin_noise_bound_gain_;
+  double kiss_matcher_solver_noise_bound_gain_;
 
   unsigned int dist_before_reclosing_;
-  int teaser_count_ = 0;
+  int kiss_matcher_count_ = 0;
   int odom_count_ = 0;
 
   lamp_utils::HarrisParams harris_params_;
@@ -137,7 +140,7 @@ protected:
     ODOMETRY,
     ODOM_ROTATION,
     FEATURES,
-    TEASERPP,
+    KISS_MATCHER,
     CANDIDATE
   };
 

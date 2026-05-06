@@ -14,6 +14,5 @@
     uri: git@github.com:MIT-SPARK/Kimera-RPGO.git
     version: master
 - git:
-    local-name: teaser_plusplus
-    uri: git@github.com:MIT-SPARK/TEASER-plusplus.git
-    version: feature/pcl-matcher
+    local-name: KISS-Matcher
+    uri: git@github.com:MIT-SPARK/KISS-Matcher.git

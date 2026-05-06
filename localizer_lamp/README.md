@@ -10,16 +10,17 @@ Build this package in a catkin workspace
 mkdir -p catkin_ws/src
 cd catkin_ws
 catkin init
-catkin config -DCMAKE_BUILD_TYPE=Release -DGTSAM_TANGENT_PREINTEGRATION=OFF -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF -DOPENGV_BUILD_WITH_MARCH_NATIVE=OFF -DBUILD_TEASER_FPFH=ON
+catkin config -DCMAKE_BUILD_TYPE=Release -DGTSAM_TANGENT_PREINTEGRATION=OFF -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF -DOPENGV_BUILD_WITH_MARCH_NATIVE=OFF
 cd src
 git clone git@github.com:NeBula-Autonomy/LAMP.git localizer_lamp
 git clone git@github.com:NeBula-Autonomy/common_nebula_slam.git
 wstool init
 wstool merge localizer_lamp/install/lamp_ssh.rosinstall
 wstool up
+touch KISS-Matcher/CATKIN_IGNORE
 catkin build lamp
 ```
-The rosinstall file should take care of most of the dependencies such as [GTSAM](https://github.com/borglab/gtsam) and Eigen.
+The rosinstall file should take care of most of the dependencies such as [GTSAM](https://github.com/borglab/gtsam) and Eigen. KISS-Matcher is used by the loop-closure ICP initialization path and is expected at `src/KISS-Matcher`.
 
 ### Python dependencies
 
@@ -145,7 +146,7 @@ The clean way to read it is by package role:
 - `loop_closure`
   - This package searches for loop closures and computes them.
   - It contains the full loop-closure pipeline: candidate generation, prioritization, queueing, geometric verification, and publication of loop-closure edges.
-  - It supports several strategies, including proximity-based, laser-based, RSSI-based, and TEASER++/ICP-based validation paths.
+  - It supports several strategies, including proximity-based, laser-based, RSSI-based, and KISS-Matcher/ICP-based validation paths.
   - Base behavior: subscribe to `pose_graph_incremental`, detect candidate matches, publish loop-closure edges.
   - Main files: [LoopClosureBase.cc](/home/nlg/catkin1_ws/src/localizer_lamp/loop_closure/src/LoopClosureBase.cc:1), [LoopGeneration.cc](/home/nlg/catkin1_ws/src/localizer_lamp/loop_closure/src/LoopGeneration.cc:1), [LoopComputation.cc](/home/nlg/catkin1_ws/src/localizer_lamp/loop_closure/src/LoopComputation.cc:1), [RssiLoopClosure.cc](/home/nlg/catkin1_ws/src/localizer_lamp/loop_closure/src/RssiLoopClosure.cc:1)
 
