@@ -180,6 +180,63 @@ TEST_F(TestLoopComputation, PerformAlignment) {
       gtsam::assert_equal(lamp_utils::ToGtsam(tf_exp), lamp_utils::ToGtsam(tf), 1e-3));
 }
 
+TEST_F(TestLoopComputation, PerformAlignmentKissMatcherFallback) {
+  ros::param::set("base/icp_initialization_method", 4);
+  ros::param::set("base/KISS_MATCHER/min_final_inliers", 1000000);
+
+  ros::NodeHandle nh;
+  ASSERT_TRUE(icp_compute_.Initialize(nh));
+
+  PointCloud::Ptr corner = GenerateCorner();
+  PointCloud::Ptr corner_moved(new PointCloud);
+  Eigen::Matrix4f T = Eigen::Matrix4f::Identity();
+  T(0, 3) = 1;
+  T(1, 3) = -0.001;
+  pcl::transformPointCloudWithNormals(*corner, *corner_moved, T, true);
+
+  pose_graph_msgs::KeyedScan::Ptr ks0(new pose_graph_msgs::KeyedScan);
+  *ks0 = PointCloudToKeyedScan(corner, gtsam::Symbol('a', 0));
+  pose_graph_msgs::KeyedScan::Ptr ks100(new pose_graph_msgs::KeyedScan);
+  *ks100 = PointCloudToKeyedScan(corner_moved, gtsam::Symbol('a', 100));
+
+  keyedScanCallback(ks0);
+  keyedScanCallback(ks100);
+
+  pose_graph_msgs::PoseGraph::Ptr kp(new pose_graph_msgs::PoseGraph);
+  pose_graph_msgs::PoseGraphNode kp0, kp100;
+  kp0.key = gtsam::Symbol('a', 0);
+  kp100.key = gtsam::Symbol('a', 100);
+  kp0.pose.position.z = 0.1;
+  kp100.pose.position.x = -0.9;
+  kp100.pose.position.y = 0.1;
+  kp->nodes.push_back(kp0);
+  kp->nodes.push_back(kp100);
+
+  const gtsam::Pose3 p0 = lamp_utils::ToGtsam(kp0.pose);
+  const gtsam::Pose3 p100 = lamp_utils::ToGtsam(kp100.pose);
+
+  keyedPoseCallback(kp);
+
+  geometry_utils::Transform3 tf, tf_exp;
+  gtsam::Matrix66 covar;
+  EXPECT_TRUE(performAlignment(
+      gtsam::Symbol('a', 100), gtsam::Symbol('a', 0), p100, p0, &tf, &covar));
+
+  tf_exp.translation = geometry_utils::Vec3(T(0, 3), T(1, 3), T(2, 3));
+  tf_exp.rotation = geometry_utils::Rot3(T(0, 0),
+                                         T(0, 1),
+                                         T(0, 2),
+                                         T(1, 0),
+                                         T(1, 1),
+                                         T(1, 2),
+                                         T(2, 0),
+                                         T(2, 1),
+                                         T(2, 2));
+
+  EXPECT_TRUE(gtsam::assert_equal(
+      lamp_utils::ToGtsam(tf_exp), lamp_utils::ToGtsam(tf), 1e-3));
+}
+
 }  // namespace lamp_loop_closure
 
 int main(int argc, char** argv) {

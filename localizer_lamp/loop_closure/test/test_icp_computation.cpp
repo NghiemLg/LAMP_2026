@@ -51,6 +51,7 @@ TEST_F(TestICPComputation, TestThreadedEqualsNonThreaded) {
     ros::NodeHandle nh("base"), pnh("base");
     ros::param::set("base/icp_thread_pool_thread_count", 1);
     ros::param::set("base/sac_ia/fitness_score_threshold",std::numeric_limits<double>::max());
+    ros::param::set("base/distance_before_reclosing", 0);
     //Set the iterations really high so that we can get repeatable solutions
     ros::param::set("base/sac_ia/iterations", 100);
     ros::param::set("base/icp_lc/iterations", 100);

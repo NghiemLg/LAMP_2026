@@ -231,31 +231,25 @@ bool IcpLoopComputation::SetupICP(pcl::MultithreadedGeneralizedIterativeClosestP
 
 bool IcpLoopComputation::CheckReclosingDistance(gtsam::Key key_from,
                                                 gtsam::Key key_to) const {
-
   if (closed_keyes_.size() == 0) {
     return true;
   }
 
-  // Keyed scans to close to other loop closures
-  gtsam::Key closest_from, closest_to;
+  const auto closestClosedKey = [this](const gtsam::Key key) {
+    const auto upper = closed_keyes_.lower_bound(key);
+    if (upper == closed_keyes_.begin()) {
+      return *upper;
+    }
+    if (upper == closed_keyes_.end()) {
+      return *std::prev(upper);
+    }
 
-  const auto fmit = closed_keyes_.lower_bound(key_from);
-  if (fmit == closed_keyes_.begin())
-    closest_from = *fmit;
-  const auto prev_fmit = std::prev(fmit);
-  closest_from =
-      (fmit == closed_keyes_.end() || key_from - *prev_fmit <= *fmit - key_from)
-          ? *prev_fmit
-          : *fmit;
+    const auto lower = std::prev(upper);
+    return key - *lower <= *upper - key ? *lower : *upper;
+  };
 
-  const auto toit = closed_keyes_.lower_bound(key_to);
-  if (toit == closed_keyes_.begin())
-    closest_to = *toit;
-  const auto prev_toit = std::prev(toit);
-  closest_to =
-      (toit == closed_keyes_.end() || key_to - *prev_toit <= *toit - key_to)
-          ? *prev_toit
-          : *toit;
+  const gtsam::Key closest_from = closestClosedKey(key_from);
+  const gtsam::Key closest_to = closestClosedKey(key_to);
 
   if (abs(static_cast<int>(closest_from) - static_cast<int>(key_from)) <
           dist_before_reclosing_ &&
@@ -555,7 +549,7 @@ bool IcpLoopComputation::PerformAlignment(const gtsam::Symbol& key1,
   case IcpInitMethod::KISS_MATCHER: {
     if (!GetKissMatcherInitialAlignment(
             accumulated_source, accumulated_target, &initial_guess)) {
-      return false;
+      ROS_DEBUG("KISS-Matcher initialization failed; falling back to odometry.");
     }
   } break;
   case IcpInitMethod::CANDIDATE: {
