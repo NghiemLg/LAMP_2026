@@ -24,7 +24,9 @@ namespace lamp_utils {
   const char UWB_PREFIX = 'u';
 
   // Define prefixes for ALL VALID ROBOTS in this file
-  const std::map<std::string, char> ROBOT_PREFIXES = {{"husky1", 'a'},
+  const std::map<std::string, char> ROBOT_PREFIXES = {{"uav1", 'a'},
+                                                      {"ugv1", 'b'},
+                                                      {"husky1", 'a'},
                                                       {"husky2", 'b'},
                                                       {"husky3", 'c'},
                                                       {"husky4", 'd'},
@@ -40,7 +42,9 @@ namespace lamp_utils {
                                                       {"xmaxx1", 'x'},
                                                       {"base", 'z'}};
 
-  const std::map<std::string, char> ARTIFACT_PREFIXES = {{"husky1", 'A'},
+  const std::map<std::string, char> ARTIFACT_PREFIXES = {{"uav1", 'A'},
+                                                         {"ugv1", 'B'},
+                                                         {"husky1", 'A'},
                                                          {"husky2", 'B'},
                                                          {"husky3", 'C'},
                                                          {"husky4", 'D'},

@@ -3,6 +3,9 @@
   <arg name="sim" default="false"/>
   <arg name="pgo_log" default="$(find lamp_pgo)/log"/>
   <arg name="use_old_lc" default="false"/>
+  <arg name="robot_names_config" default="$(find lamp)/config/robot_names.yaml"/>
+  <arg name="rssi_parameters_config" default="$(find loop_closure)/config/rssi_parameters.yaml"/>
+  <arg name="run_loop_closure_batcher" default="true"/>
 
   <group ns="$(arg robot_namespace)">
 
@@ -38,7 +41,7 @@
       <param name="b_use_fixed_covariances" value="false" />
 
       <!-- Robots -->
-      <rosparam file="$(find lamp)/config/robot_names.yaml" subst_value="true"/>
+      <rosparam file="$(arg robot_names_config)" subst_value="true"/>
 
       <!-- Rates -->
       <rosparam file="$(find lamp)/config/lamp_rates.yaml"/>
@@ -78,7 +81,7 @@
       <!-- Config - TODO move the proximity_threshold param elsewhere -->
       <rosparam file="$(find pose_graph_visualizer)/config/visualizer_parameters.yaml" subst_value="true"/>
       <!-- Robots -->
-      <rosparam file="$(find lamp)/config/robot_names.yaml" subst_value="true"/>
+      <rosparam file="$(arg robot_names_config)" subst_value="true"/>
 
       <!-- Topics -->
       <remap from="~lamp/pose_graph" to="lamp_base/pose_graph"/>
@@ -101,7 +104,10 @@
     </node>
 
     <!-- Loop Closure  -->
-    <include unless="$(arg use_old_lc)" file="$(find loop_closure)/launch/loop_closure_modules.launch"/>
+    <include unless="$(arg use_old_lc)" file="$(find loop_closure)/launch/loop_closure_modules.launch">
+      <arg name="rssi_parameters_config" value="$(arg rssi_parameters_config)"/>
+      <arg name="run_loop_closure_batcher" value="$(arg run_loop_closure_batcher)"/>
+    </include>
     <include if="$(arg use_old_lc)" file="$(find loop_closure)/launch/loop_closure_old.launch"/>
 
   </group>
