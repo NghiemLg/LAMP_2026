@@ -97,6 +97,16 @@ if (TARGET robin)
   )
 endif()
 
+set(SOLID_SOURCE_DIR
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../SOLiD/cpp"
+)
+if (NOT EXISTS "${SOLID_SOURCE_DIR}/include/solid_module.h")
+  message(FATAL_ERROR
+    "SOLiD was not found at ${SOLID_SOURCE_DIR}. "
+    "Clone it to /home/nlg/catkin1_ws/src/SOLiD."
+  )
+endif()
+
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CXX17)
 if (COMPILER_SUPPORTS_CXX17)
@@ -105,7 +115,13 @@ else()
   message(FATAL_ERROR "${CMAKE_CXX_COMPILER} doesn't provide c++17 support.")
 endif()
 
-include_directories(include ${catkin_INCLUDE_DIRS} ${GTSAM_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${GTSAM_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS}
+  ${SOLID_SOURCE_DIR}/include
+)
 link_directories(${catkin_LIBRARY_DIRS} ${GTSAM_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS})
 add_library(${PROJECT_NAME} 
   src/LoopGeneration.cc
@@ -126,6 +142,9 @@ add_library(${PROJECT_NAME}
 
 find_package(Eigen3 REQUIRED)
 find_package( PCL 1.8 REQUIRED )
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
@@ -173,6 +192,19 @@ target_link_libraries(rssi_loop_generation_node
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   gtsam
+)
+
+add_executable(solid_loop_condition_node
+  src/solid_loop_condition_node.cc
+  ${SOLID_SOURCE_DIR}/src/solid.cpp
+)
+target_link_libraries(solid_loop_condition_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${PCL_LIBRARIES}
+  gtsam
+  Eigen3::Eigen
 )
 
 add_executable(laser_loop_closure_node src/laser_loop_closure_node.cc)

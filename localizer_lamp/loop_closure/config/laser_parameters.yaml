@@ -29,6 +29,21 @@ robot:
   b_take_n_closest: true
 
   #--------------------------------------------------------------------------------
+  #### SOLiD loop condition
+  #--------------------------------------------------------------------------------
+  # Optional descriptor gate inserted after proximity loop generation and before
+  # LAMP geometric loop computation. It filters candidate pairs only; it does not
+  # replace ICP/GICP/KISS loop verification.
+  solid_loop_condition:
+    enable: false
+    similarity_threshold: 0.80
+    min_filtered_points: 30
+    max_candidate_wait_sec: 5.0
+    retry_period_sec: 0.25
+    pass_missing_after_timeout: true
+    publish_rejected_debug: false
+
+  #--------------------------------------------------------------------------------
   #### Loop closure prioritization
   #--------------------------------------------------------------------------------
   #--------------------------------------------------------------------------------
@@ -56,7 +71,7 @@ robot:
   #--------------------------------------------------------------------------------
   # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, KISS_MATCHER, CANDIDATE }
   # Set this to 4 to use KISS-Matcher; 3 keeps the previous SAC-IA feature initializer.
-  icp_initialization_method: 3
+  icp_initialization_method: 4
 
   # ICP covariance calculation method { POINT2POINT, POINT2PLANE }
   icp_covariance_calculation: 1
@@ -178,6 +193,21 @@ base:
   b_take_n_closest: false
 
   #--------------------------------------------------------------------------------
+  #### SOLiD loop condition
+  #--------------------------------------------------------------------------------
+  # Optional descriptor gate inserted after proximity loop generation and before
+  # LAMP geometric loop computation. It filters candidate pairs only; it does not
+  # replace ICP/GICP/KISS loop verification.
+  solid_loop_condition:
+    enable: false
+    similarity_threshold: 0.80
+    min_filtered_points: 30
+    max_candidate_wait_sec: 5.0
+    retry_period_sec: 0.25
+    pass_missing_after_timeout: true
+    publish_rejected_debug: false
+
+  #--------------------------------------------------------------------------------
   #### Loop closure prioritization
   #--------------------------------------------------------------------------------
   #--------------------------------------------------------------------------------
@@ -205,7 +235,7 @@ base:
   #--------------------------------------------------------------------------------
   # Initialization method { IDENTITY, ODOMETRY, ODOM_ROTATION, FEATURES, KISS_MATCHER, CANDIDATE }
   # Set this to 4 to use KISS-Matcher; 3 keeps the previous SAC-IA feature initializer.
-  icp_initialization_method: 3
+  icp_initialization_method: 4
 
   # ICP covariance calculation method { POINT2POINT, POINT2PLANE }
   icp_covariance_calculation: 1

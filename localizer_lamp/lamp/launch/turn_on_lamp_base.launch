@@ -6,6 +6,8 @@
   <arg name="robot_names_config" default="$(find lamp)/config/robot_names.yaml"/>
   <arg name="rssi_parameters_config" default="$(find loop_closure)/config/rssi_parameters.yaml"/>
   <arg name="run_loop_closure_batcher" default="true"/>
+  <arg name="use_solid_loop_condition" default="false"/>
+  <arg name="solid_similarity_threshold" default="0.80"/>
 
   <group ns="$(arg robot_namespace)">
 
@@ -107,6 +109,8 @@
     <include unless="$(arg use_old_lc)" file="$(find loop_closure)/launch/loop_closure_modules.launch">
       <arg name="rssi_parameters_config" value="$(arg rssi_parameters_config)"/>
       <arg name="run_loop_closure_batcher" value="$(arg run_loop_closure_batcher)"/>
+      <arg name="use_solid_loop_condition" value="$(arg use_solid_loop_condition)"/>
+      <arg name="solid_similarity_threshold" value="$(arg solid_similarity_threshold)"/>
     </include>
     <include if="$(arg use_old_lc)" file="$(find loop_closure)/launch/loop_closure_old.launch"/>
 

@@ -26,6 +26,8 @@ namespace lamp_utils {
   // Define prefixes for ALL VALID ROBOTS in this file
   const std::map<std::string, char> ROBOT_PREFIXES = {{"uav1", 'a'},
                                                       {"ugv1", 'b'},
+                                                      {"jackal1", 'a'},
+                                                      {"none_iris2", 'b'},
                                                       {"husky1", 'a'},
                                                       {"husky2", 'b'},
                                                       {"husky3", 'c'},
@@ -44,6 +46,8 @@ namespace lamp_utils {
 
   const std::map<std::string, char> ARTIFACT_PREFIXES = {{"uav1", 'A'},
                                                          {"ugv1", 'B'},
+                                                         {"jackal1", 'A'},
+                                                         {"none_iris2", 'B'},
                                                          {"husky1", 'A'},
                                                          {"husky2", 'B'},
                                                          {"husky3", 'C'},
